@@ -17,7 +17,7 @@ class UpdateHoroscope extends Command
     {
         $signs = ["aquarius","pisces","aries","taurus","gemini","cancer","leo","virgo","libra","scorpio","sagittarius","capricorn"];
         $langs = ["es", "ca", "pt", "it", "fr", "de", "nl", "pl", "ru"];
-        $times = ["today", "week", "month"];
+        $times = ["today", "yesterday", "week", "month"];
         $today = Carbon::today();
 
         foreach ($signs as $sign) {

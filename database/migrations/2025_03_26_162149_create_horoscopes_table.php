@@ -15,12 +15,11 @@ return new class extends Migration
             $table->id();
             $table->string('sign');
             $table->string('lang');
-            $table->string('time'); // today, week, month...
+            $table->string('time'); 
             $table->text('prediction');
-            $table->date('date'); // para saber de qué día es la predicción
+            $table->date('date'); 
             $table->timestamps();
-
-            $table->unique(['sign', 'lang', 'time', 'date']); // evita duplicados
+            $table->unique(['sign', 'lang', 'time', 'date']); 
         });
     }
 

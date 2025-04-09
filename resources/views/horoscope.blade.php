@@ -1,138 +1,274 @@
 <!DOCTYPE html>
 <html lang="ca">
+
 <head>
-    <meta charset="UTF-8">
-    <title>🌙 Horòscop Interactiu</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(120deg, #fdfbfb, #ebedee);
-            margin: 0;
-            padding: 2rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+  <meta charset="UTF-8">
+  <title>Horòscop Interactiu</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <!-- Iconify per als icones zodiacals -->
+  <script src="https://code.iconify.design/2/2.2.1/iconify.min.js"></script>
+  <style>
+    body {
+      background: #f0f2f5;
+    }
 
-        .container {
-            background: white;
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            max-width: 600px;
-            width: 100%;
-        }
+    .card-custom:hover {
+      transform: translateY(-5px);
+      transition: transform 0.3s ease;
+    }
 
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 1rem;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        label {
-            font-weight: 600;
-        }
-
-        select, button {
-            padding: 0.6rem;
-            border-radius: 6px;
-            border: 1px solid #ccc;
-            font-size: 1rem;
-        }
-
-        button {
-            background-color: #4f46e5;
-            color: white;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-        }
-
-        button:hover {
-            background-color: #4338ca;
-        }
-
-        .prediction {
-            background: #f4f4f4;
-            border-left: 4px solid #4f46e5;
-            padding: 1rem;
-            border-radius: 8px;
-            font-size: 1.1rem;
-        }
-
-        .loading {
-            text-align: center;
-            color: #888;
-            font-style: italic;
-        }
-    </style>
+    .card-custom {
+      transition: transform 0.3s ease;
+    }
+  </style>
 </head>
+
 <body>
-
+  <!-- Barra de Navegació -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light shadow-sm mb-4">
     <div class="container">
-        <h1>🔮 Horòscop interactiu</h1>
+      <a class="navbar-brand" href="#">
+        <i class="bi bi-moon-stars-fill"></i> Horòscop Interactiu
+      </a>
+    </div>
+  </nav>
 
-        <div class="form-group">
-            <label for="sign">Signa:</label>
-            <select id="sign">
-                @foreach(['aquarius','pisces','aries','taurus','gemini','cancer','leo','virgo','libra','scorpio','sagittarius','capricorn'] as $s)
-                    <option value="{{ $s }}">{{ ucfirst($s) }}</option>
-                @endforeach
+  <div class="container">
+    <!-- Formulari per consultar horòscop -->
+    <div class="card mb-4 shadow-sm">
+      <div class="card-body">
+        <h3 class="card-title mb-3">Consulta el teu horòscop</h3>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label for="sign" class="form-label">Signa</label>
+            <select id="sign" class="form-select">
+              @foreach(['aquarius','pisces','aries','taurus','gemini','cancer','leo','virgo','libra','scorpio','sagittarius','capricorn'] as $s)
+                <option value="{{ $s }}">{{ ucfirst($s) }}</option>
+              @endforeach
             </select>
-
-            <label for="lang">Idioma:</label>
-            <select id="lang">
-                @foreach(['es'=>'Castellà','ca'=>'Català','pt'=>'Portuguès','it'=>'Italià','fr'=>'Francès','de'=>'Alemany','nl'=>'Holandès','pl'=>'Polonès','ru'=>'Rus'] as $code => $name)
-                    <option value="{{ $code }}">{{ $name }}</option>
-                @endforeach
+          </div>
+          <div class="col-md-4">
+            <label for="lang" class="form-label">Idioma</label>
+            <select id="lang" class="form-select">
+              @foreach(['es'=>'Castellà','ca'=>'Català','pt'=>'Portuguès','it'=>'Italià','fr'=>'Francès','de'=>'Alemany','nl'=>'Holandès','pl'=>'Polonès','ru'=>'Rus'] as $code => $name)
+                <option value="{{ $code }}">{{ $name }}</option>
+              @endforeach
             </select>
-
-            <label for="time">Període:</label>
-            <select id="time">
-                @foreach(['today'=>'Avui','yesterday'=>'Ahir','week'=>'Setmana','month'=>'Mes'] as $t => $label)
-                    <option value="{{ $t }}">{{ $label }}</option>
-                @endforeach
+          </div>
+          <div class="col-md-4">
+            <label for="time" class="form-label">Període</label>
+            <select id="time" class="form-select">
+              @foreach(['today'=>'Avui','yesterday'=>'Ahir','week'=>'Setmana','month'=>'Mes'] as $t => $label)
+                <option value="{{ $t }}">{{ $label }}</option>
+              @endforeach
             </select>
-
-            <button onclick="loadHoroscope()">🔍 Consultar</button>
+          </div>
         </div>
-
-        <div id="result" class="prediction" style="display:none;"></div>
-        <div id="loading" class="loading" style="display:none;">Carregant horòscop...</div>
+        <div class="mt-4 text-center">
+          <button id="search-btn" class="btn btn-primary">
+            <i class="bi bi-search"></i> Consultar
+          </button>
+        </div>
+      </div>
     </div>
 
-    <script>
-        function loadHoroscope() {
-            const sign = document.getElementById('sign').value;
-            const lang = document.getElementById('lang').value;
-            const time = document.getElementById('time').value;
+    <!-- Resultat de predicció personalitzada -->
+    <div id="result" class="mb-4" style="display:none;"></div>
 
-            document.getElementById('result').style.display = 'none';
-            document.getElementById('loading').style.display = 'block';
+    <!-- Grid per mostrar els horòscops diaris -->
+    <div id="daily-grid" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4"></div>
 
-            fetch(`/api/horoscope?sign=${sign}&lang=${lang}&time=${time}`)
-                .then(res => res.json())
-                .then(data => {
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('result').innerText = data.prediction;
-                    document.getElementById('result').style.display = 'block';
-                })
-                .catch(err => {
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('result').innerText = 'Error al carregar la predicció.';
-                    document.getElementById('result').style.display = 'block';
-                });
+    <!-- Indicador de "Loading" -->
+    <div id="loading" class="text-center" style="display:none;">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Carregant...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="text-center text-muted py-3 mt-5 border-top">
+    © 2025 Horòscop Interactiu. Tots els drets reservats.
+  </footer>
+
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const signs = [{
+          name: "aquarius",
+          icon: "mdi:zodiac-aquarius"
+        },
+        {
+          name: "pisces",
+          icon: "mdi:zodiac-pisces"
+        },
+        {
+          name: "aries",
+          icon: "mdi:zodiac-aries"
+        },
+        {
+          name: "taurus",
+          icon: "mdi:zodiac-taurus"
+        },
+        {
+          name: "gemini",
+          icon: "mdi:zodiac-gemini"
+        },
+        {
+          name: "cancer",
+          icon: "mdi:zodiac-cancer"
+        },
+        {
+          name: "leo",
+          icon: "mdi:zodiac-leo"
+        },
+        {
+          name: "virgo",
+          icon: "mdi:zodiac-virgo"
+        },
+        {
+          name: "libra",
+          icon: "mdi:zodiac-libra"
+        },
+        {
+          name: "scorpio",
+          icon: "mdi:zodiac-scorpio"
+        },
+        {
+          name: "sagittarius",
+          icon: "mdi:zodiac-sagittarius"
+        },
+        {
+          name: "capricorn",
+          icon: "mdi:zodiac-capricorn"
         }
+      ];
 
-        // Carrega inicial
-        window.onload = loadHoroscope;
-    </script>
+      const grid = document.getElementById("daily-grid");
+      const langSelector = document.getElementById("lang");
+      const signSelector = document.getElementById("sign");
+      const timeSelector = document.getElementById("time");
+      const result = document.getElementById("result");
+      const loadingIndicator = document.getElementById("loading");
 
+      let currentLang = langSelector.value;
+      let activeRequestId = 0;
+
+      function loadingCard() {
+        return `
+          <div class="col">
+            <div class="card card-custom">
+              <div class="card-body">
+                <h5 class="card-title placeholder-glow">
+                  <span class="placeholder col-6"></span>
+                </h5>
+                <p class="card-text placeholder-glow">
+                  <span class="placeholder col-7"></span>
+                  <span class="placeholder col-4"></span>
+                  <span class="placeholder col-4"></span>
+                  <span class="placeholder col-6"></span>
+                  <span class="placeholder col-8"></span>
+                </p>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function clearGrid() {
+        grid.innerHTML = signs.map(() => loadingCard()).join("");
+      }
+
+      async function loadDailyHoroscope(lang) {
+        const requestId = ++activeRequestId;
+        clearGrid();
+
+        try {
+          const res = await fetch(`/horoscope/all?lang=${lang}&time=today`);
+          const data = await res.json();
+
+          if (requestId !== activeRequestId) return;
+
+          const predictionsBySign = Object.fromEntries(data.map(item => [item.sign.toLowerCase(), item.prediction]));
+
+          let cardsHtml = '';
+          signs.forEach(sign => {
+            const prediction = predictionsBySign[sign.name] || 'No prediction available.';
+            cardsHtml += `
+              <div class="col">
+                <div class="card card-custom h-100 shadow-sm">
+                  <div class="card-body">
+                    <h5 class="card-title">
+                      <span class="iconify" data-icon="${sign.icon}"></span> ${sign.name}
+                    </h5>
+                    <p class="card-text">${prediction}</p>
+                  </div>
+                </div>
+              </div>
+            `;
+          });
+          grid.innerHTML = cardsHtml;
+
+        } catch (error) {
+          console.error("Error loading horoscopes:", error);
+        }
+      }
+
+      async function loadCustomPrediction(sign, lang, time) {
+        result.style.display = "block";
+        result.innerHTML = `<div class="alert alert-info" role="alert">
+          <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+          Carregant...
+        </div>`;
+
+        try {
+          const res = await fetch(`/api/horoscope?sign=${sign}&lang=${lang}&time=${time}`);
+          const data = await res.json();
+
+          result.innerHTML = `
+            <div class="card shadow-sm">
+              <div class="card-body">
+                <h4 class="card-title">
+                  <span class="iconify" data-icon="mdi:zodiac-${data.sign.toLowerCase()}"></span>
+                  ${data.sign} (${data.time})
+                </h4>
+                <p class="card-text">${data.prediction}</p>
+              </div>
+            </div>
+          `;
+        } catch (error) {
+          result.innerHTML = `<div class="alert alert-danger" role="alert">
+            Error al carregar la predicció.
+          </div>`;
+        }
+      }
+
+      // Inicial: carregar horòscops
+      await loadDailyHoroscope(currentLang);
+
+      langSelector.addEventListener("change", async () => {
+        currentLang = langSelector.value;
+        await loadDailyHoroscope(currentLang);
+
+        if (result.style.display !== "none") {
+          const sign = signSelector.value;
+          const time = timeSelector.value;
+          await loadCustomPrediction(sign, currentLang, time);
+        }
+      });
+
+      document.getElementById("search-btn").addEventListener("click", () => {
+        const sign = signSelector.value;
+        const lang = langSelector.value;
+        const time = timeSelector.value;
+        loadCustomPrediction(sign, lang, time);
+      });
+    });
+  </script>
 </body>
+
 </html>
