@@ -12,15 +12,23 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   <!-- Iconify per als icones zodiacals -->
   <script src="https://code.iconify.design/2/2.2.1/iconify.min.js"></script>
+  <!-- (Opcional) Libreria de banderas per mostrar banderes -->
+  <!--
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/6.6.6/css/flag-icons.min.css"
+        integrity="sha512-24Zy11IuCZ4HiYIZhf8sS0oZkYaoARDhorkRCibArHNn1jJOMAAjQyaw6Id/78cZ/F5MSv2fEvAr0vzRBKn2hA=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer" />
+  -->
   <style>
     :root {
-      --primary: #212121; /* Texto principal, elegante y oscuro */
-      --secondary: #757575; /* Texto secundario, tono gris */
-      --accent: #009688;    /* Acento elegante (teal) */
-      --bg-color: #FAFAFA;   /* Fondo general claro */
-      --card-bg: #ffffff;    /* Fondo de las tarjetas */
-      --header-bg: linear-gradient(135deg, #455A64, #37474F); /* Fondo del header en tonos azul-gris */
-      --navbar-bg: #263238;  /* Navbar en tono oscuro, elegante */
+      --primary: #212121;
+      --secondary: #757575;
+      --accent: #009688;
+      --bg-color: #FAFAFA;
+      --card-bg: #ffffff;
+      --header-bg: linear-gradient(135deg, #455A64, #37474F);
+      --navbar-bg: #263238;
     }
 
     * {
@@ -84,7 +92,7 @@
       margin-bottom: 40px;
     }
 
-    /* Estilo de las tarjetas (cards) */
+    /* Tarjetas (cards) */
     .card {
       position: relative;
       border: none;
@@ -95,7 +103,7 @@
       overflow: hidden;
     }
 
-    /* Línea vertical de acento para las cards */
+    /* Línea vertical de acento */
     .card::before {
       content: "";
       position: absolute;
@@ -173,9 +181,23 @@
       margin-top: 20px;
     }
 
-    /* Estilo para la consulta personalizada */
+    /* Sección de consulta personalizada */
     #custom-result .card {
       margin-top: 15px;
+    }
+
+    /* Mini menú de periodos */
+    .period-nav .nav-link {
+      color: #555;
+      padding: 6px 12px;
+      border-radius: 6px;
+      margin-right: 5px;
+      cursor: pointer;
+    }
+
+    .period-nav .nav-link.active {
+      background-color: var(--accent);
+      color: #fff;
     }
   </style>
 </head>
@@ -201,6 +223,7 @@
     <div class="row my-4">
       <div class="col-12 text-end">
         <label for="lang" class="form-label me-2">Idioma:</label>
+        <!-- Es pot mostrar també la bandera si s'activa la llibreria (veure comentari al head) -->
         <select id="lang" class="form-select d-inline-block w-auto">
           @foreach(['es'=>'Castellà','ca'=>'Català','pt'=>'Portuguès','it'=>'Italià','fr'=>'Francès','de'=>'Alemany','nl'=>'Holandès','pl'=>'Polonès','ru'=>'Rus'] as $code => $name)
             <option value="{{ $code }}">{{ $name }}</option>
@@ -209,11 +232,30 @@
       </div>
     </div>
 
-    <!-- Secció: Horòscops d'avui -->
+    <!-- Secció: Horòscops (amb mini menú de periodos) -->
     <section class="mb-5">
-      <h3 class="mb-3" style="font-weight: 600;">Horòscops d'avui</h3>
+      <!-- Títol que es modificarà segons el període -->
+      <h3 id="main-title" class="mb-3" style="font-weight: 600;">Horòscops d'avui</h3>
+      
+      <!-- Mini menú de periodos -->
+      <ul class="nav period-nav mb-3" id="period-nav">
+        <li class="nav-item">
+          <a class="nav-link active" data-time="today">Avui</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-time="yesterday">Ahir</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-time="week">Setmana</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-time="month">Mes</a>
+        </li>
+      </ul>
+
+      <!-- Grid on es mostren les prediccions -->
       <div id="daily-grid" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
-        <!-- Les targetes s'inseriran per JavaScript -->
+        <!-- Les targetes es carregaran per JavaScript -->
       </div>
     </section>
 
@@ -270,6 +312,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
+      // Definició dels signes (per a cada targeta) i els seus icones
       const signs = [
         { name: "aquarius", icon: "mdi:zodiac-aquarius" },
         { name: "pisces", icon: "mdi:zodiac-pisces" },
@@ -285,10 +328,21 @@
         { name: "capricorn", icon: "mdi:zodiac-capricorn" }
       ];
 
+      // Mapping per canviar el títol segons el període
+      const titleMapping = {
+        today: "Horòscops d'avui",
+        yesterday: "Horòscops d'ahir",
+        week: "Horòscops de la setmana",
+        month: "Horòscops del mes"
+      };
+
       const langSelector = document.getElementById("lang");
       const dailyGrid = document.getElementById("daily-grid");
+      const mainTitle = document.getElementById("main-title");
+      let currentTime = "today";
       let activeRequestId = 0;
 
+      // Funció per mostrar placeholders mentre es carrega la informació
       function loadingCard() {
         return `
           <div class="col">
@@ -309,23 +363,34 @@
           </div>`;
       }
 
+      // Funció per netejar la grid i mostrar placeholders
       function clearGrid() {
         dailyGrid.innerHTML = signs.map(() => loadingCard()).join("");
       }
 
+      // Carrega les prediccions de totes les targetes
       async function loadDailyHoroscope(lang) {
         const requestId = ++activeRequestId;
         clearGrid();
+
+        // Actualitzem el títol segons el període seleccionat
+        mainTitle.textContent = titleMapping[currentTime] || "Horòscops";
+
         try {
-          const res = await fetch(`/horoscope/all?lang=${lang}&time=today`);
+          const res = await fetch(`/horoscope/all?lang=${lang}&time=${currentTime}`);
           const data = await res.json();
 
           if (requestId !== activeRequestId) return;
 
-          const predictionsBySign = Object.fromEntries(data.map(item => [item.sign.toLowerCase(), item.prediction]));
+          // Convertim el resultat en un objecte on la clau és el signe (minúscules)
+          const predictionsBySign = Object.fromEntries(
+            data.map(item => [item.sign.toLowerCase(), item.prediction])
+          );
+
           let cardsHtml = '';
+          // Recorrer tots els signes per mostrar la predicció de cadascun
           signs.forEach(sign => {
-            const prediction = predictionsBySign[sign.name] || 'No prediction available.';
+            const prediction = predictionsBySign[sign.name] || 'No hi ha predicció disponible.';
             cardsHtml += `
               <div class="col">
                 <div class="card card-custom h-100">
@@ -338,23 +403,39 @@
                 </div>
               </div>`;
           });
+
           dailyGrid.innerHTML = cardsHtml;
         } catch (error) {
-          console.error("Error loading horoscopes:", error);
+          console.error("Error al carregar els horòscops:", error);
         }
       }
 
-      // Elements per la consulta personalitzada
+      // Gestió del mini menú de períodes
+      const periodLinks = document.querySelectorAll("#period-nav .nav-link");
+      periodLinks.forEach(link => {
+        link.addEventListener("click", e => {
+          e.preventDefault();
+          periodLinks.forEach(l => l.classList.remove("active"));
+          link.classList.add("active");
+
+          currentTime = link.dataset.time;
+          loadDailyHoroscope(langSelector.value);
+        });
+      });
+
+      // Lògica per la consulta personalitzada (sense modificacions)
       const customSignSelector = document.getElementById("custom-sign");
       const customTimeSelector = document.getElementById("custom-time");
       const customResult = document.getElementById("custom-result");
 
       async function loadCustomPrediction(sign, lang, time) {
         customResult.style.display = "block";
-        customResult.innerHTML = `<div class="alert alert-info" role="alert">
-          <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-          Carregant...
-        </div>`;
+        customResult.innerHTML = `
+          <div class="alert alert-info" role="alert">
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Carregant...
+          </div>`;
+
         try {
           const res = await fetch(`/api/horoscope?sign=${sign}&lang=${lang}&time=${time}`);
           const data = await res.json();
@@ -362,22 +443,31 @@
             <div class="card">
               <div class="card-body">
                 <h4 class="card-title">
-                  <span class="iconify" data-icon="mdi:zodiac-${data.sign.toLowerCase()}"></span> ${data.sign} (${data.time})
+                  <span class="iconify" data-icon="mdi:zodiac-${data.sign.toLowerCase()}"></span>
+                  ${data.sign} (${data.time})
                 </h4>
                 <p class="card-text">${data.prediction}</p>
               </div>
             </div>`;
         } catch (error) {
-          customResult.innerHTML = `<div class="alert alert-danger" role="alert">
-            Error al carregar la predicció.
-          </div>`;
+          customResult.innerHTML = `
+            <div class="alert alert-danger" role="alert">
+              Error al carregar la predicció.
+            </div>`;
         }
       }
 
-      // Carrega inicial dels horòscops d'avui
+      document.getElementById("custom-search-btn").addEventListener("click", () => {
+        const sign = customSignSelector.value;
+        const lang = langSelector.value;
+        const time = customTimeSelector.value;
+        loadCustomPrediction(sign, lang, time);
+      });
+
+      // Carrega inicial de les targetes amb els valors per defecte
       await loadDailyHoroscope(langSelector.value);
 
-      // Actualitza tot si es canvia l'idioma
+      // Quan canvia l'idioma, es recarrega la grid i, si existeix, la consulta personalitzada
       langSelector.addEventListener("change", async () => {
         const lang = langSelector.value;
         await loadDailyHoroscope(lang);
@@ -386,14 +476,6 @@
           const time = customTimeSelector.value;
           await loadCustomPrediction(sign, lang, time);
         }
-      });
-
-      // Consulta personalitzada
-      document.getElementById("custom-search-btn").addEventListener("click", () => {
-        const sign = customSignSelector.value;
-        const lang = langSelector.value;
-        const time = customTimeSelector.value;
-        loadCustomPrediction(sign, lang, time);
       });
     });
   </script>
